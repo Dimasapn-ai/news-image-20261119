@@ -234,10 +234,10 @@ FONT = {
     "9": [[(0.4, 4.9), (1.3, 5.7), (2.8, 5.7), (3.7, 4.6), (3.8, 1.5),
            (2.9, 0.3), (1.2, 0.3), (0.3, 1.2), (0.3, 2.5), (1.2, 3.3),
            (2.8, 3.3), (3.8, 2.5)]],
-    ".": [[(2, 5.55), (2, 5.7)]],
-    ",": [[(2.1, 5.1), (1.8, 6.1)]],
-    ":": [[(2, 1.1), (2, 1.25)], [(2, 4.9), (2, 5.05)]],
-    ";": [[(2, 1.1), (2, 1.25)], [(2.1, 4.9), (1.8, 6.1)]],
+    ".": [[(1.0, 5.55), (1.0, 5.7)]],
+    ",": [[(1.1, 5.1), (0.8, 6.1)]],
+    ":": [[(1.0, 1.1), (1.0, 1.25)], [(1.0, 4.9), (1.0, 5.05)]],
+    ";": [[(1.0, 1.1), (1.0, 1.25)], [(1.1, 4.9), (0.8, 6.1)]],
     "-": [[(0.7, 3), (3.3, 3)]],
     "/": [[(0.7, 6), (3.3, 0)]],
     "!": [[(2, 0), (2, 4.0)], [(2, 5.55), (2, 5.7)]],
@@ -408,24 +408,22 @@ def draw_flag_ru(cv, x, y, w, h):
 def draw_lead_scene(cv, x, y, w, h):
     cv.rect(x, y, w, h, (224, 236, 246))
     border_box(cv, x, y, w, h, NAVY, 2.5)
-    draw_globe(cv, x + 66, y + h / 2, 44)
+    draw_globe(cv, x + 58, y + h / 2, 40)
     # flags on poles behind the table
     flags = (draw_flag_us, draw_flag_cn, draw_flag_ru)
     for i, draw_flag in enumerate(flags):
-        fx = x + 168 + i * 82
+        fx = x + 136 + i * 80
         cv.line(fx, y + 16, fx, y + h - 30, 3, GRAY)
-        draw_flag(cv, fx + 3, y + 14, 58, 36)
+        draw_flag(cv, fx + 3, y + 14, 56, 34)
     # three leaders: heads and shoulders behind the table
-    people = ((x + 196, NAVY, SKIN1), (x + 278, (52, 52, 58), SKIN2),
-              (x + 360, (24, 24, 30), SKIN3))
+    people = ((x + 164, NAVY, SKIN1), (x + 244, (52, 52, 58), SKIN2),
+              (x + 324, (24, 24, 30), SKIN3))
     for cx, suit, skin in people:
         cv.rect(cx - 21, y + h - 42, 42, 22, suit)
         cv.disc(cx, y + h - 52, 13.5, skin)
-    # the table, with the declaration on it
-    cv.polygon([(x + 150, y + h - 24), (x + w - 18, y + h - 24),
-                (x + w - 34, y + h - 4), (x + 166, y + h - 4)], BROWN)
-    cv.rect(x + 258, y + h - 30, 44, 12, WHITE)
-    border_box(cv, x + 258, y + h - 30, 44, 12, GRAY, 1.2)
+    # the table they sit at
+    cv.polygon([(x + 116, y + h - 24), (x + w - 12, y + h - 24),
+                (x + w - 26, y + h - 4), (x + 130, y + h - 4)], BROWN)
 
 
 # ------------------------------------------------------------------
@@ -509,22 +507,29 @@ def icon_chart(cv, x, y):
 # The front page
 # ------------------------------------------------------------------
 
+def fit_lines(text, size, max_w, max_lines, min_size):
+    """Shrink size until the wrapped text fits max_lines lines."""
+    while size > min_size and len(wrap_text(text, size, max_w)) > max_lines:
+        size -= 0.5
+    return size, wrap_text(text, size, max_w)
+
+
 def panel(cv, x, y, w, h, icon, headline, sub):
     cv.rect(x, y, w, h, CARD)
     border_box(cv, x, y, w, h, NAVY, 2.5)
     icon(cv, x + 12, y + 14)
     tx = x + 134
     tw = w - 134 - 14
-    size = fit_size(headline, 27, tw)
-    lines = wrap_text(headline, size, tw)
-    ly = y + 18
-    for line in lines[:2]:
-        draw_text(cv, tx, ly, line, size, INK)
-        ly += size + 9
-    sy = y + 88
-    for line in wrap_text(sub, 18.5, tw)[:3]:
-        draw_text(cv, tx, sy, line, 18.5, GRAY)
-        sy += 24
+    hs, hlines = fit_lines(headline, 26, tw, 2, 19)
+    ly = y + 15
+    for line in hlines:
+        draw_text(cv, tx, ly, line, hs, INK)
+        ly += hs + 7
+    ss, slines = fit_lines(sub, 17.5, tw, 3, 14)
+    sy = ly + 4
+    for line in slines:
+        draw_text(cv, tx, sy, line, ss, GRAY)
+        sy += ss + 5
 
 
 def compose():
@@ -555,51 +560,50 @@ def compose():
     hs = fit_size(head2, 48, 928)
     draw_text(cv, 48, 302, head1, hs, INK)
     draw_text(cv, 48, 302 + hs + 14, head2, hs, INK)
-    scene_y = 302 + 2 * hs + 34
-    draw_lead_scene(cv, 48, scene_y, 440, 128)
+    scene_y = 302 + 2 * hs + 26
+    draw_lead_scene(cv, 48, scene_y, 400, 132)
     sub = ("\"PEACE DECLARATION\" ON NUCLEAR RISKS AND ENERGY, "
-           "AGREED AT A 90-MINUTE MEETING - THE FIRST TIME THE "
-           "LEADERS OF THE US, CHINA AND RUSSIA HAVE SAT DOWN "
-           "TOGETHER.")
-    sy = scene_y + 4
-    for line in wrap_text(sub, 23, 452):
-        draw_text(cv, 516, sy, line, 23, INK)
-        sy += 30
+           "AGREED AFTER 90 MINUTES OF TALKS - A FIRST MEETING "
+           "OF THE THREE LEADERS.")
+    sy = scene_y + 2
+    for line in wrap_text(sub, 21, 500):
+        draw_text(cv, 472, sy, line, 21, INK)
+        sy += 27
 
     # ---- four panels ----
-    pw, ph = 452, 148
+    pw, ph = 452, 152
     px = (48, 524)
-    py = (566, 726)
+    py = (558, 712)
     panel(cv, px[0], py[0], pw, ph, icon_scales,
-          "WORLD COURT: MYANMAR COMMITTED GENOCIDE",
-          "THE ICJ RULES ON THE ROHINGYA - THE FIRST RULING OF "
-          "ITS KIND.")
+          "MYANMAR GUILTY OF GENOCIDE",
+          "WORLD COURT RULES ON THE ROHINGYA - A FIRST RULING "
+          "OF ITS KIND.")
     panel(cv, px[1], py[0], pw, ph, icon_tanker,
-          "HORMUZ IN FLAMES AS IRAN WIDENS ATTACKS",
-          "KUWAIT AND BAHRAIN HIT, TANKERS BURN - THE IEA CALLS "
-          "IT THE GREATEST EVER THREAT TO ENERGY SECURITY.")
+          "HORMUZ IN FLAMES",
+          "IRAN WIDENS ATTACKS ON KUWAIT AND BAHRAIN; TANKERS "
+          "BURN IN THE STRAIT.")
     panel(cv, px[0], py[1], pw, ph, icon_bridge,
-          "UKRAINE HITS KERCH BRIDGE A THIRD TIME",
-          "THE STRIKE ON THE CRIMEA LINK HALTS RAIL TRAFFIC - "
-          "THE THIRD HIT IN FOUR DAYS.")
+          "UKRAINE HITS KERCH BRIDGE AGAIN",
+          "THIRD STRIKE IN FOUR DAYS HALTS RAIL TRAFFIC TO "
+          "CRIMEA.")
     panel(cv, px[1], py[1], pw, ph, icon_chart,
           "ANTHROPIC SETS AN IPO RECORD",
           "AN $81.3 BILLION RAISE VALUES THE AI COMPANY AT "
           "$1.5 TRILLION.")
 
     # ---- footer band ----
-    cv.rect(40, 890, W - 80, 108, NAVY)
+    cv.rect(40, 882, W - 80, 120, NAVY)
     foot = [
         "VAN GOGH SELLS FOR $190.4M - AN ARTIST RECORD AT SOTHEBY'S",
         "GTA VI LAUNCHES WORLDWIDE - THE WAIT IS OVER",
         "HOUTHI MISSILE DAMAGES SAUDI FUND TOWER IN RIYADH",
         "DENMARK BACKS GREENLAND DEFENCE DEAL, UNANIMOUSLY",
     ]
-    fy = 900
+    fy = 892
     for line in foot:
-        fs = fit_size(line, 20, 900)
+        fs = fit_size(line, 19, 900)
         draw_text(cv, W / 2, fy, line, fs, WHITE, align="center")
-        fy += 26
+        fy += 25
 
     return encode_png(cv.downscale(), W, H)
 
